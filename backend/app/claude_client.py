@@ -1,3 +1,4 @@
+import base64
 from typing import Optional
 
 from anthropic import Anthropic
@@ -6,6 +7,31 @@ from . import config
 from .session_store import SessionState
 
 _client: Optional[Anthropic] = None
+
+
+def _detect_media_type(image_base64: str) -> str:
+    """Sniff the actual image format from its bytes.
+
+    The frontend accepts any image type (accept="image/*"), so a PNG
+    screenshot or a GIF is just as likely as a JPEG photo. Anthropic's API
+    rejects the request outright if the declared media_type doesn't match
+    the real image bytes, so we can't just hardcode one.
+    """
+    try:
+        # 20 base64 chars (a multiple of 4, so no padding needed) decode to
+        # 15 raw bytes -- enough to cover every signature checked below.
+        header = base64.b64decode(image_base64[:20])
+    except Exception:
+        return "image/jpeg"
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if header.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+        return "image/webp"
+    return "image/jpeg"
 
 
 def _get_client() -> Anthropic:
@@ -87,7 +113,11 @@ def _user_content_blocks(text: str, image_base64: Optional[str]) -> list:
         blocks.append(
             {
                 "type": "image",
-                "source": {"type": "base64", "media_type": "image/jpeg", "data": image_base64},
+                "source": {
+                    "type": "base64",
+                    "media_type": _detect_media_type(image_base64),
+                    "data": image_base64,
+                },
             }
         )
     blocks.append({"type": "text", "text": text})
@@ -146,7 +176,11 @@ def extract_expression_from_image(image_base64: str) -> Optional[str]:
                 "content": [
                     {
                         "type": "image",
-                        "source": {"type": "base64", "media_type": "image/jpeg", "data": image_base64},
+                        "source": {
+                            "type": "base64",
+                            "media_type": _detect_media_type(image_base64),
+                            "data": image_base64,
+                        },
                     },
                     {"type": "text", "text": "Transcribe the final expression from this image."},
                 ],
