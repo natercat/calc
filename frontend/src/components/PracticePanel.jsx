@@ -60,7 +60,9 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
       )}
       {problem && (
         <>
-          <p className="prompt"><code>{problem.prompt}</code></p>
+          <div className="prompt">
+            <MathText text={problem.prompt} />
+          </div>
           <div className="transcript">
             {transcript.map((entry, i) => (
               <div key={i} className={`bubble ${entry.role}`}>
@@ -69,7 +71,11 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
             ))}
           </div>
           {error && <p className="error">{error}</p>}
-          <MathInput onSubmit={handleSubmit} disabled={loading} placeholder="Type your answer..." />
+          <MathInput
+            onSubmit={handleSubmit}
+            disabled={loading}
+            placeholder="Type your answer, e.g. 2x + 3 or x^2"
+          />
           <button className="secondary" onClick={newProblem} disabled={loading}>
             New problem
           </button>

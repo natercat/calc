@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchLesson } from '../api'
+import LessonContent from './LessonContent'
 import MathText from './MathText'
 
 export default function LessonPanel({ sessionId, topic }) {
@@ -18,7 +19,7 @@ export default function LessonPanel({ sessionId, topic }) {
   return (
     <div className="lesson-panel">
       <MathText text={lesson.intro} />
-      <pre className="lesson-content">{lesson.content}</pre>
+      <LessonContent text={lesson.content} />
     </div>
   )
 }

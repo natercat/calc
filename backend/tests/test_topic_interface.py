@@ -3,6 +3,8 @@ the registry. Topic-specific edge cases (e.g. a particular tricky limit,
 +C-invariance for integrals) live in each topic's own test file instead.
 """
 
+import re
+
 import pytest
 
 from app.models import SkillLevel
@@ -61,6 +63,22 @@ class TestTopicInterface:
             prompt = topic_module.build_prompt(problem)
             assert isinstance(prompt, str)
             assert prompt.strip()
+
+    def test_build_prompt_never_leaks_raw_python_operator_syntax(self, topic_module):
+        # A student should read rendered math ($x^2$), never programming
+        # syntax like '**' for exponentiation -- that's precisely what made
+        # the original problem prompts and lesson text unreadable to a
+        # beginner.
+        for problem in topic_module.PROBLEM_BANK:
+            prompt = topic_module.build_prompt(problem)
+            assert "**" not in prompt
+
+    def test_lesson_text_never_leaks_raw_python_operator_syntax(self, topic_module):
+        # LESSON_TEXT legitimately uses "**bold**" markdown, which contains
+        # "**" flanked by non-word characters (start-of-line, punctuation) --
+        # this specifically catches the exponent pattern (e.g. "x**2"),
+        # which is flanked by word characters on both sides.
+        assert not re.search(r"\w\*\*\w", topic_module.LESSON_TEXT)
 
     def test_solve_returns_an_answer_that_checks_out_as_correct(self, topic_module):
         # The engine's own computed answer must always be judged correct by

@@ -145,6 +145,17 @@ def check_constant_equal(student_text: str, correct_value: sympy.Expr) -> bool:
     return bool((student_value - correct_value).equals(0))
 
 
+def to_latex(expr_text: str) -> str:
+    """Render a sympy-syntax expression as LaTeX, for display (problem
+    prompts, lesson text) -- students should never have to read '**' or
+    read raw code syntax as if it were math notation."""
+    return sympy.latex(parse_expression(expr_text))
+
+
+def point_to_latex(point_text: str) -> str:
+    return sympy.latex(parse_constant(point_text))
+
+
 def check_is_antiderivative(student_text: str, integrand: sympy.Expr) -> bool:
     """An indefinite-integral answer is correct iff its derivative equals the
     original integrand. Checking it this way (rather than comparing to one

@@ -112,11 +112,23 @@ main {
 }
 
 .lesson-content {
-  white-space: pre-wrap;
-  font-family: inherit;
   background: #f2f4f8;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   border-radius: 8px;
+}
+
+.lesson-heading {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.lesson-heading:first-child {
+  margin-top: 0;
+}
+
+.lesson-paragraph {
+  margin: 0.75rem 0;
+  line-height: 1.6;
 }
 
 .transcript {
@@ -210,10 +222,15 @@ button.secondary {
   cursor: pointer;
 }
 
-.prompt code {
+.prompt {
   background: #f2f4f8;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
+}
+
+.prompt .math-text {
+  margin: 0;
 }
 
 .error {

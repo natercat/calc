@@ -1,4 +1,4 @@
-from ..math_engine import check_constant_equal, limit_value
+from ..math_engine import check_constant_equal, limit_value, point_to_latex, to_latex
 from ._common import pick_by_weakest_skill
 
 SKILLS = [
@@ -8,21 +8,34 @@ SKILLS = [
     "trig_limits",
 ]
 
-LESSON_TEXT = """
-## Limits
+LESSON_TEXT = r"""
+## What is a limit?
 
-A limit describes the value a function approaches as x gets arbitrarily close to some
-point -- it doesn't require the function to actually be defined there.
+A limit answers the question: "as x gets closer and closer to some value,
+what value does the function get closer and closer to?" It's about the
+trend, not necessarily an exact value at that point -- the function doesn't
+even have to be defined there for the limit to exist.
 
-Direct substitution: if f is continuous at x = a, lim(x -> a) f(x) = f(a).
+**Example**: as $x$ gets closer to $2$, $3x + 1$ gets closer to $7$. We
+write this as $\lim_{x \to 2} (3x+1) = 7$.
 
-Factoring (0/0 indeterminate form): if direct substitution gives 0/0, factor the
-numerator and denominator and cancel the common factor before substituting again.
+## Direct substitution (start here)
 
-Limits at infinity: for a rational function, compare the degrees of the numerator and
-denominator. Same degree -> the limit is the ratio of leading coefficients.
+For most ordinary functions, you can just plug the value in:
+$$\lim_{x \to a} f(x) = f(a) \quad \text{if } f \text{ is continuous at } a$$
 
-A key trig limit: lim(x -> 0) sin(x)/x = 1.
+## Once you're comfortable: trickier cases
+
+**The 0/0 case (factoring)**: sometimes plugging in gives $\frac{0}{0}$,
+which doesn't mean the limit doesn't exist -- it means you need to simplify
+first. Factor the numerator and denominator, cancel what's common between
+them, then substitute again.
+
+**Limits at infinity**: for a ratio of polynomials as $x \to \infty$,
+compare the highest powers on top and bottom. Same highest power -> the
+limit is just the ratio of their leading coefficients.
+
+**A limit worth memorizing**: $\lim_{x \to 0} \dfrac{\sin(x)}{x} = 1$.
 """.strip()
 
 PROBLEM_BANK = [
@@ -42,7 +55,9 @@ def pick_problem(profile: dict) -> dict:
 
 
 def build_prompt(problem: dict) -> str:
-    return f"Evaluate lim(x -> {problem['point']}) of {problem['expr']}"
+    point_latex = point_to_latex(problem["point"])
+    expr_latex = to_latex(problem["expr"])
+    return rf"Evaluate the limit: $\lim_{{x \to {point_latex}}} {expr_latex}$"
 
 
 def solve(problem: dict):

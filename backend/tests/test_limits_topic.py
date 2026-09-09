@@ -27,8 +27,11 @@ def test_check_answer_rejects_infinity_for_a_finite_limit():
     assert check_answer("oo", problem) is False
 
 
-def test_build_prompt_mentions_the_point():
+def test_build_prompt_uses_rendered_limit_notation():
+    # The prompt should read as real math (LaTeX, for KaTeX to render), not
+    # the raw sympy-syntax expression string a student would have to type.
     problem = _problem("l3")
     prompt = build_prompt(problem)
-    assert "2" in prompt
-    assert problem["expr"] in prompt
+    assert r"\lim" in prompt
+    assert "2" in prompt  # the point being approached
+    assert problem["expr"] not in prompt

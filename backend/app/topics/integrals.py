@@ -1,6 +1,6 @@
 import sympy
 
-from ..math_engine import X, check_is_antiderivative, parse_expression
+from ..math_engine import X, check_is_antiderivative, parse_expression, to_latex
 from ._common import pick_by_weakest_skill
 
 SKILLS = [
@@ -10,20 +10,37 @@ SKILLS = [
     "trig_integrals",
 ]
 
-LESSON_TEXT = """
-## Indefinite Integrals
+LESSON_TEXT = r"""
+## What is an indefinite integral?
 
-An indefinite integral (antiderivative) of f(x) is any function F(x) whose derivative is
-f(x). Since the derivative of a constant is 0, F(x) + C is also an antiderivative for any
-constant C -- but for practice here, give just one antiderivative and omit the "+ C".
+An integral is the reverse of a derivative: given $f(x)$, find a function
+$F(x)$ whose derivative *is* $f(x)$. It's sometimes described as "undoing"
+the derivative.
 
-Power rule for integration: integral of x^n dx = x^(n+1)/(n+1) + C  (for n != -1)
+Because the derivative of any constant is $0$, if $F(x)$ works then so does
+$F(x) + 5$, or $F(x)$ plus any other constant -- that's why a fully general
+answer is written $F(x) + C$. For practice here, just give one
+antiderivative and leave the "+ C" off.
 
-Constant multiple: integral of k*f(x) dx = k * integral of f(x) dx
+## The power rule for integration (start here)
 
-Sum rule: integral of (f(x) + g(x)) dx = integral of f(x) dx + integral of g(x) dx
+$$\int x^n\, dx = \frac{x^{n+1}}{n+1} \quad (n \neq -1)$$
 
-Trig integrals: integral of sin(x) dx = -cos(x) + C, integral of cos(x) dx = sin(x) + C
+**Example**: the integral of $x^2$ is $\dfrac{x^3}{3}$ -- raise the exponent
+by one, then divide by the new exponent. You can check this yourself by
+taking the derivative of $\dfrac{x^3}{3}$ and confirming you get back $x^2$.
+
+## Once you're comfortable: combining terms
+
+**Constant multiple** -- a constant factor just comes along for the ride:
+$$\int k\,f(x)\, dx = k\int f(x)\, dx$$
+
+**Sum rule** -- integrate term by term, same as with derivatives:
+$$\int (f(x) + g(x))\, dx = \int f(x)\, dx + \int g(x)\, dx$$
+
+**Trig integrals**:
+$\displaystyle\int \sin(x)\, dx = -\cos(x)$ and
+$\displaystyle\int \cos(x)\, dx = \sin(x)$
 """.strip()
 
 PROBLEM_BANK = [
@@ -43,7 +60,8 @@ def pick_problem(profile: dict) -> dict:
 
 
 def build_prompt(problem: dict) -> str:
-    return f"Find the indefinite integral of f(x) = {problem['expr']} (omit the constant of integration, + C)"
+    expr_latex = to_latex(problem["expr"])
+    return rf"Find the indefinite integral of $f(x) = {expr_latex}$ (omit the constant of integration, + C)."
 
 
 def solve(problem: dict):
