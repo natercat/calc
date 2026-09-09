@@ -195,10 +195,14 @@ def extract_expression_from_image(image_base64: str) -> Optional[str]:
 
 def lesson_intro(session: SessionState, topic: str) -> str:
     prompt = (
-        f"Write a short (2-4 sentence) personalized introduction to a lesson on '{topic}' "
+        f"Write a short (2-3 sentence) personalized introduction to a lesson on '{topic}' "
         "for this student, based on their knowledge profile below. If they already show "
         "strength in related skills, acknowledge that and set expectations accordingly; if "
-        f"skills are unknown/weak, frame it as starting from the fundamentals.\n\n"
+        "skills are unknown/weak, frame it as starting from the fundamentals. This text is "
+        "shown on a read-only lesson page with no reply box -- do NOT end with a question or "
+        "invite them to choose an option, since there's no way for them to answer here. Just "
+        "set the stage, then stop; a 'Practice' and a 'Chat' tab are what they'll use next, "
+        "which they can already see.\n\n"
         f"{_profile_context(session)}"
     )
     response = _get_client().messages.create(

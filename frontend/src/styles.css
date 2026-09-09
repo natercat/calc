@@ -29,6 +29,12 @@ header h1 {
   margin-right: auto;
 }
 
+.mode-description {
+  margin: -0.75rem 0 1rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
 nav button {
   background: none;
   border: 1px solid #ccc;
@@ -220,6 +226,18 @@ button.secondary {
   border-radius: 6px;
   padding: 0.4rem 1rem;
   cursor: pointer;
+}
+
+.practice-intro p {
+  line-height: 1.6;
+  color: #333;
+  max-width: 40rem;
+}
+
+.practice-intro code {
+  background: #f2f4f8;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
 }
 
 .prompt {

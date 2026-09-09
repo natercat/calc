@@ -54,9 +54,17 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
   return (
     <div className="practice-panel">
       {!problem && (
-        <button onClick={newProblem} disabled={loading}>
-          Start a practice problem
-        </button>
+        <div className="practice-intro">
+          <p>
+            You'll get one problem at a time. Type your answer using ordinary math notation
+            (like <code>2x + 3</code> or <code>x^2</code>), or upload a photo of work you did on
+            paper. If you're wrong, you'll get a hint and can try again -- there's no penalty for
+            a wrong attempt.
+          </p>
+          <button onClick={newProblem} disabled={loading}>
+            Start a practice problem
+          </button>
+        </div>
       )}
       {problem && (
         <>

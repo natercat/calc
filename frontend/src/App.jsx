@@ -11,9 +11,13 @@ const TOPICS = [
   { id: 'integrals', label: 'Integrals' },
 ]
 const MODES = [
-  { id: 'lesson', label: 'Lesson' },
-  { id: 'practice', label: 'Practice' },
-  { id: 'chat', label: 'Chat' },
+  { id: 'lesson', label: 'Lesson', description: 'Read an explanation of this topic, at your own pace.' },
+  {
+    id: 'practice',
+    label: 'Practice',
+    description: 'Work through problems one at a time, with hints if you get stuck.',
+  },
+  { id: 'chat', label: 'Chat', description: 'Ask anything in your own words, or say what you want to focus on.' },
 ]
 
 export default function App() {
@@ -59,6 +63,7 @@ export default function App() {
           ))}
         </select>
       </header>
+      <p className="mode-description">{MODES.find((m) => m.id === mode)?.description}</p>
       <main>
         <section className="content">
           {mode === 'lesson' && <LessonPanel sessionId={sessionId} topic={topic} />}
