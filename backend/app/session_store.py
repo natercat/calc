@@ -1,10 +1,12 @@
 import threading
+import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from fastapi import HTTPException
 
+from . import config
 from .models import SkillLevel
 from .topics.registry import ALL_SKILLS
 
@@ -23,6 +25,7 @@ class SessionState:
     profile: dict = field(default_factory=lambda: {skill: SkillLevel.UNKNOWN for skill in ALL_SKILLS})
     history: list = field(default_factory=list)
     active_problems: dict = field(default_factory=dict)
+    last_active: float = field(default_factory=time.time)
 
 
 _sessions: dict[str, SessionState] = {}
@@ -57,19 +60,64 @@ def session_lock(session_id: str):
         yield
 
 
+# There's no accounts system and no client identity beyond a session_id, so
+# an abandoned browser tab's session (and its lock) would otherwise sit in
+# memory forever. Rather than run a background thread, expiry is swept
+# lazily: any call to create_session/get_session may trigger a sweep, but at
+# most once per _SWEEP_INTERVAL_SECONDS of wall-clock time, so the O(sessions)
+# scan doesn't run on every single request.
+_SWEEP_INTERVAL_SECONDS = 300
+_last_sweep = 0.0
+
+
+def _maybe_sweep(now: float) -> None:
+    global _last_sweep
+    if now - _last_sweep < _SWEEP_INTERVAL_SECONDS:
+        return
+    _last_sweep = now
+    purge_expired_sessions(now)
+
+
+def purge_expired_sessions(now: float | None = None) -> int:
+    """Evict sessions inactive for longer than SESSION_TTL_SECONDS. Returns
+    the number purged. A session currently mid-request (its lock is held) is
+    left for the next sweep rather than evicted out from under it."""
+    now = now if now is not None else time.time()
+    expired_ids = [
+        sid for sid, session in list(_sessions.items()) if now - session.last_active > config.SESSION_TTL_SECONDS
+    ]
+
+    purged = 0
+    for session_id in expired_ids:
+        with _locks_guard:
+            lock = _session_locks.get(session_id)
+            if lock is not None:
+                if not lock.acquire(blocking=False):
+                    continue
+                lock.release()
+                del _session_locks[session_id]
+        _sessions.pop(session_id, None)
+        purged += 1
+    return purged
+
+
 def create_session() -> str:
+    _maybe_sweep(time.time())
     session_id = str(uuid.uuid4())
     _sessions[session_id] = SessionState()
     return session_id
 
 
 def get_session(session_id: str) -> SessionState:
+    now = time.time()
+    _maybe_sweep(now)
     session = _sessions.get(session_id)
     if session is None:
         raise HTTPException(
             status_code=404,
             detail="Unknown session_id. Create a session first via POST /api/session.",
         )
+    session.last_active = now
     return session
 
 

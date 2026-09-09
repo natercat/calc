@@ -91,10 +91,26 @@ verified against a live key.
 - **Limits are curated to have a clean answer** — the problem bank avoids
   two-sided limits that don't exist (e.g. `1/x` at `x=0`), which the current
   answer checker doesn't have a way to express.
-- **No session expiry or rate limiting** on the in-memory store — sessions
-  (and their per-session locks) accumulate for the life of the process, and
-  nothing caps how often one session can call the Claude API. Concurrency
-  itself is handled: a per-session lock (`session_store.session_lock`) wraps
-  every chat/practice route so concurrent requests against the *same* session
-  can't race (see `tests/test_practice_concurrency.py` for the scenario this
-  closes); requests against different sessions still run fully in parallel.
+- **In-memory only, single process** — the session store, locks, and rate
+  limiters all live in this process's memory, so nothing survives a restart
+  and nothing coordinates across multiple worker processes. Fine for the
+  current single-instance deployment; a scaled-out deployment would need a
+  shared store (e.g. Redis) behind all of it. Within that constraint, the
+  operational concerns are handled:
+  - **Concurrency**: a per-session lock (`session_store.session_lock`) wraps
+    every chat/practice route, so concurrent requests against the *same*
+    session can't race (see `tests/test_practice_concurrency.py` for the
+    exact scenario this closes); different sessions still run fully in
+    parallel.
+  - **Session expiry**: a session inactive for longer than
+    `SESSION_TTL_SECONDS` (default 2 hours) is evicted, along with its lock,
+    the next time any request triggers a sweep (throttled to at most once
+    per 5 minutes of wall-clock time, piggybacked on ordinary traffic rather
+    than a background thread). A session mid-request is never evicted out
+    from under it.
+  - **Rate limiting**: `CLAUDE_CALLS_PER_MINUTE` caps how often one session
+    can trigger a Claude API call, and `SESSION_CREATES_PER_MINUTE_PER_IP`
+    caps new-session creation per client IP (closing the obvious bypass of
+    the first limit — just make a new session). Both return 429 with a
+    `Retry-After` header; the frontend surfaces the message as an inline
+    error rather than failing silently.

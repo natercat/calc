@@ -8,14 +8,18 @@ export default function ChatPanel({ sessionId, onProfileUpdate }) {
     { role: 'tutor', text: 'Ask me anything about calculus, or tell me what you want to focus on.' },
   ])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   async function handleSubmit(text, imageBase64) {
     setMessages((m) => [...m, { role: 'student', text: text || '(photo)' }])
     setLoading(true)
+    setError(null)
     try {
       const result = await sendChatMessage(sessionId, text, imageBase64)
       setMessages((m) => [...m, { role: 'tutor', text: result.reply }])
       onProfileUpdate(result.profile)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -30,6 +34,7 @@ export default function ChatPanel({ sessionId, onProfileUpdate }) {
           </div>
         ))}
       </div>
+      {error && <p className="error">{error}</p>}
       <MathInput
         onSubmit={handleSubmit}
         disabled={loading}

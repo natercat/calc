@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from .. import claude_client
 from ..math_engine import MathParseError
 from ..models import PracticeProblem, StartPracticeRequest, StepRequest, StepResponse
+from ..rate_limiter import claude_call_limiter
 from ..session_store import ProblemAttempt, apply_profile_updates, get_session, session_lock
 from ..topics.registry import TOPICS
 
@@ -34,6 +35,7 @@ def start_practice(req: StartPracticeRequest):
 @router.post("/step", response_model=StepResponse)
 def submit_step(req: StepRequest):
     session = get_session(req.session_id)
+    claude_call_limiter.check(req.session_id)
 
     # The whole handler runs under the lock: two concurrent submissions for
     # the same problem must not both see attempt.solved == False and both

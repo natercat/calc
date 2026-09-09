@@ -7,18 +7,23 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
   const [problem, setProblem] = useState(null)
   const [transcript, setTranscript] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     setProblem(null)
     setTranscript([])
+    setError(null)
   }, [topic])
 
   async function newProblem() {
     setLoading(true)
     setTranscript([])
+    setError(null)
     try {
       const p = await startPractice(sessionId, topic)
       setProblem(p)
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -27,6 +32,7 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
   async function handleSubmit(text, imageBase64) {
     if (!problem) return
     setLoading(true)
+    setError(null)
     try {
       const result = await submitStep(sessionId, problem.problem_id, text, imageBase64)
       setTranscript((t) => [
@@ -38,6 +44,8 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
       if (result.solved) {
         setTranscript((t) => [...t, { role: 'system', text: 'Solved! Start a new problem when ready.' }])
       }
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -60,12 +68,14 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
               </div>
             ))}
           </div>
+          {error && <p className="error">{error}</p>}
           <MathInput onSubmit={handleSubmit} disabled={loading} placeholder="Type your answer..." />
           <button className="secondary" onClick={newProblem} disabled={loading}>
             New problem
           </button>
         </>
       )}
+      {!problem && error && <p className="error">{error}</p>}
     </div>
   )
 }

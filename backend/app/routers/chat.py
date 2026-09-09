@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from .. import claude_client
 from ..models import ChatRequest, ChatResponse
+from ..rate_limiter import claude_call_limiter
 from ..session_store import add_history, apply_profile_updates, get_session, session_lock
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -10,6 +11,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 @router.post("", response_model=ChatResponse)
 def chat(req: ChatRequest):
     session = get_session(req.session_id)
+    claude_call_limiter.check(req.session_id)
 
     # Locked for the same reason as practice/step: chat_reply reads
     # session.history to build the message list, and a concurrent request
