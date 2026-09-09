@@ -9,7 +9,7 @@ from app.session_store import (
     create_session,
     get_session,
 )
-from app.topics.derivatives import SKILLS
+from app.topics.registry import ALL_SKILLS
 
 
 class TestCreateAndGetSession:
@@ -21,7 +21,7 @@ class TestCreateAndGetSession:
     def test_new_session_has_default_profile(self):
         session_id = create_session()
         session = get_session(session_id)
-        assert set(session.profile.keys()) == set(SKILLS)
+        assert set(session.profile.keys()) == set(ALL_SKILLS)
         assert all(level == SkillLevel.UNKNOWN for level in session.profile.values())
 
     def test_new_session_has_empty_history_and_problems(self):
@@ -89,6 +89,6 @@ class TestAddHistory:
 
 class TestProblemAttempt:
     def test_defaults(self):
-        attempt = ProblemAttempt(expression="x**2", skill="power_rule")
+        attempt = ProblemAttempt(topic="derivatives", problem={"expr": "x**2"}, skill="power_rule")
         assert attempt.attempts == 0
         assert attempt.solved is False

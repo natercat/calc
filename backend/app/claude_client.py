@@ -134,7 +134,7 @@ def chat_reply(session: SessionState, message: str, image_base64: Optional[str])
 
 def practice_feedback(
     session: SessionState,
-    expression: str,
+    problem_prompt: str,
     skill: str,
     student_answer: str,
     image_base64: Optional[str],
@@ -144,15 +144,15 @@ def practice_feedback(
     system = f"{TUTOR_PERSONA}\n\n{_profile_context(session)}"
     verdict = "correct" if is_correct else "incorrect"
     prompt = (
-        f"The student is finding the derivative of f(x) = {expression} (this problem "
-        f"targets the '{skill}' skill). This is attempt #{attempt_number}. Their submitted "
-        f"answer has been verified with a symbolic math engine to be {verdict} -- trust "
-        "this verdict, it is not your job to re-derive it.\n\n"
+        f"The student is working on this problem: \"{problem_prompt}\" (it targets the "
+        f"'{skill}' skill). This is attempt #{attempt_number}. Their submitted answer has "
+        f"been verified with a symbolic math engine to be {verdict} -- trust this verdict, "
+        "it is not your job to re-derive it.\n\n"
         f"Student's submitted answer: {student_answer or '(see attached image)'}\n\n"
         "Respond accordingly: if correct, congratulate them briefly and note what they did "
         "well. If incorrect, do NOT give the final answer -- give a hint appropriate to the "
         f"attempt number (a gentle nudge on attempt 1-2, pointing at the specific rule and "
-        "which part of the expression to reapply it to on attempt 3+). Update the profile "
+        "which part of the problem to reapply it to on attempt 3+). Update the profile "
         f"for '{skill}' based on this attempt."
     )
     messages = [{"role": "user", "content": _user_content_blocks(prompt, image_base64)}]

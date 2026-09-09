@@ -1,3 +1,6 @@
+from ..math_engine import check_equivalent, derivative_of
+from ._common import pick_by_weakest_skill
+
 SKILLS = [
     "power_rule",
     "product_rule",
@@ -36,26 +39,18 @@ PROBLEM_BANK = [
     {"id": "d10", "expr": "cos(3*x + 1)**2", "skill": "chain_rule", "difficulty": 3},
 ]
 
-_LEVEL_TO_DIFFICULTY = {
-    "unknown": 1,
-    "weak": 1,
-    "developing": 2,
-    "strong": 3,
-}
-
-_LEVEL_RANK = {"unknown": 0, "weak": 1, "developing": 2, "strong": 3}
-
-
-def _level_value(level) -> str:
-    return level.value if hasattr(level, "value") else str(level)
-
 
 def pick_problem(profile: dict) -> dict:
-    """Pick a problem targeting the student's weakest derivative skill, at a
-    difficulty matching their current estimated level for that skill."""
-    weakest_skill = min(SKILLS, key=lambda s: _LEVEL_RANK.get(_level_value(profile.get(s, "unknown")), 0))
-    target_difficulty = _LEVEL_TO_DIFFICULTY[_level_value(profile.get(weakest_skill, "unknown"))]
+    return pick_by_weakest_skill(SKILLS, PROBLEM_BANK, profile)
 
-    candidates = [p for p in PROBLEM_BANK if p["skill"] == weakest_skill]
-    candidates.sort(key=lambda p: abs(p["difficulty"] - target_difficulty))
-    return candidates[0]
+
+def build_prompt(problem: dict) -> str:
+    return f"Find d/dx of f(x) = {problem['expr']}"
+
+
+def solve(problem: dict):
+    return derivative_of(problem["expr"])
+
+
+def check_answer(student_text: str, problem: dict) -> bool:
+    return check_equivalent(student_text, solve(problem))

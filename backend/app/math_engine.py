@@ -81,3 +81,79 @@ def check_equivalent(student_text: str, correct_expr: sympy.Expr) -> bool:
     if diff == 0:
         return True
     return bool((student_expr - correct_expr).equals(0))
+
+
+_INFINITY_ALIASES = {
+    "oo": sympy.oo,
+    "inf": sympy.oo,
+    "infinity": sympy.oo,
+    "+oo": sympy.oo,
+    "+inf": sympy.oo,
+    "+infinity": sympy.oo,
+    "-oo": -sympy.oo,
+    "-inf": -sympy.oo,
+    "-infinity": -sympy.oo,
+}
+
+
+def parse_constant(text: str) -> sympy.Expr:
+    """Parse a bare number (or +-infinity) with no 'x' allowed -- used for a
+    limit's approach point and for a student's answer to a limit problem,
+    neither of which may depend on x."""
+    if not text or not text.strip():
+        raise MathParseError("Empty value.")
+    normalized = text.strip().lower()
+    if normalized in _INFINITY_ALIASES:
+        return _INFINITY_ALIASES[normalized]
+
+    try:
+        value = parse_expr(
+            text.strip(),
+            local_dict=_ALLOWED_NAMES,
+            global_dict=_SYMPY_GLOBALS,
+            transformations=_TRANSFORMATIONS,
+            evaluate=True,
+        )
+    except Exception as exc:
+        raise MathParseError(f"Could not parse '{text}' as a number.") from exc
+
+    if not isinstance(value, sympy.Basic):
+        raise MathParseError(f"'{text}' is not a valid number.")
+    if value.free_symbols:
+        raise MathParseError(f"'{text}' should be a number, not an expression in x.")
+    return value
+
+
+def limit_value(expr_text: str, point_text: str) -> sympy.Expr:
+    expr = parse_expression(expr_text)
+    point = parse_constant(point_text)
+    return sympy.limit(expr, X, point)
+
+
+def check_constant_equal(student_text: str, correct_value: sympy.Expr) -> bool:
+    student_value = parse_constant(student_text)
+    if student_value.is_infinite or correct_value.is_infinite:
+        # simplify()/.equals() on infinite quantities can produce nan for
+        # cases that are trivially unequal (oo vs -oo); direct comparison is
+        # both correct and simpler here.
+        return student_value == correct_value
+    if student_value == correct_value:
+        return True
+    diff = sympy.simplify(student_value - correct_value)
+    if diff == 0:
+        return True
+    return bool((student_value - correct_value).equals(0))
+
+
+def check_is_antiderivative(student_text: str, integrand: sympy.Expr) -> bool:
+    """An indefinite-integral answer is correct iff its derivative equals the
+    original integrand. Checking it this way (rather than comparing to one
+    canonical antiderivative from sympy.integrate) sidesteps two problems:
+    different valid techniques can produce antiderivatives that look nothing
+    alike, and it never needs to parse a literal '+ C'."""
+    student_expr = parse_expression(student_text)
+    student_derivative = sympy.simplify(sympy.diff(student_expr, X))
+    diff = sympy.simplify(student_derivative - integrand)
+    if diff == 0:
+        return True
+    return bool((student_derivative - integrand).equals(0))

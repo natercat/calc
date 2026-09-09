@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { startPractice, submitStep } from '../api'
 import MathInput from './MathInput'
 import MathText from './MathText'
@@ -7,6 +7,11 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
   const [problem, setProblem] = useState(null)
   const [transcript, setTranscript] = useState([])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setProblem(null)
+    setTranscript([])
+  }, [topic])
 
   async function newProblem() {
     setLoading(true)
@@ -55,11 +60,7 @@ export default function PracticePanel({ sessionId, topic, onProfileUpdate }) {
               </div>
             ))}
           </div>
-          <MathInput
-            onSubmit={handleSubmit}
-            disabled={loading}
-            placeholder="Type your answer, e.g. 2*x + 3"
-          />
+          <MathInput onSubmit={handleSubmit} disabled={loading} placeholder="Type your answer..." />
           <button className="secondary" onClick={newProblem} disabled={loading}>
             New problem
           </button>

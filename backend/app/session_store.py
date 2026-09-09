@@ -4,12 +4,13 @@ from dataclasses import dataclass, field
 from fastapi import HTTPException
 
 from .models import SkillLevel
-from .topics.derivatives import SKILLS
+from .topics.registry import ALL_SKILLS
 
 
 @dataclass
 class ProblemAttempt:
-    expression: str
+    topic: str
+    problem: dict
     skill: str
     attempts: int = 0
     solved: bool = False
@@ -17,7 +18,7 @@ class ProblemAttempt:
 
 @dataclass
 class SessionState:
-    profile: dict = field(default_factory=lambda: {skill: SkillLevel.UNKNOWN for skill in SKILLS})
+    profile: dict = field(default_factory=lambda: {skill: SkillLevel.UNKNOWN for skill in ALL_SKILLS})
     history: list = field(default_factory=list)
     active_problems: dict = field(default_factory=dict)
 

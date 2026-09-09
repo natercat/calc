@@ -5,7 +5,11 @@ import PracticePanel from './components/PracticePanel'
 import ChatPanel from './components/ChatPanel'
 import ProfilePanel from './components/ProfilePanel'
 
-const TOPICS = [{ id: 'derivatives', label: 'Derivatives' }]
+const TOPICS = [
+  { id: 'derivatives', label: 'Derivatives' },
+  { id: 'limits', label: 'Limits' },
+  { id: 'integrals', label: 'Integrals' },
+]
 const MODES = [
   { id: 'lesson', label: 'Lesson' },
   { id: 'practice', label: 'Practice' },

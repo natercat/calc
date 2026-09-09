@@ -80,10 +80,15 @@ main {
 
 .profile-panel li {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.15rem;
   padding: 0.4rem 0;
   border-bottom: 1px solid #eee;
   font-size: 0.85rem;
+}
+
+.profile-panel .skill-level {
+  font-size: 0.8rem;
 }
 
 .skill-name {
