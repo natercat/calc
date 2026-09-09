@@ -37,7 +37,7 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 app.add_middleware(ErrorHandlingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[config.FRONTEND_ORIGIN],
+    allow_origins=config.FRONTEND_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

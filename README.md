@@ -79,6 +79,75 @@ need manual testing against a real key. All three topics and the image-upload
 path (typed math and photos, both chat and practice) have been manually
 verified against a live key.
 
+## Deploying to production
+
+The backend keeps sessions, per-session locks, and rate-limit counters in
+process memory (see "In-memory only, single process" below), so it **must**
+run as a single persistent process -- a serverless/edge platform would
+silently break it, since each request could hit a different cold instance
+and lose all session state. **Railway** (backend) + **Vercel** (frontend) is
+the combination this repo is set up for; the config files below are already
+in place, but connecting your own accounts and setting environment variables
+has to happen in each platform's dashboard.
+
+### 1. Backend on Railway
+
+1. Sign up at [railway.app](https://railway.app) (GitHub login is simplest --
+   it also handles repo access).
+2. **New Project → Deploy from GitHub repo** → select this repo → authorize
+   Railway's GitHub App if prompted.
+3. This is a monorepo, so open the new service's **Settings** and set
+   **Root Directory** to `backend`.
+4. Railway auto-detects Python via `requirements.txt` (Nixpacks builder) and
+   uses `backend/Procfile` for the start command
+   (`uvicorn app.main:app --host 0.0.0.0 --port $PORT`) -- no build command
+   to configure.
+5. Under **Variables**, add:
+   - `ANTHROPIC_API_KEY` -- your real key
+   - `FRONTEND_ORIGIN` -- set to `http://localhost:5173` for now; you'll
+     update this in step 3 once the frontend has a real URL
+   - (optional) `ANTHROPIC_MODEL`, `SESSION_TTL_SECONDS`,
+     `CLAUDE_CALLS_PER_MINUTE`, `SESSION_CREATES_PER_MINUTE_PER_IP` --
+     defaults are reasonable, only set these if you want different values
+6. Deploy. Under **Settings → Networking**, click **Generate Domain** to get
+   a public HTTPS URL (Railway doesn't expose one automatically).
+7. Verify: `curl https://<your-service>.up.railway.app/api/health` should
+   return `{"status":"ok"}`.
+
+### 2. Frontend on Vercel
+
+1. Sign up at [vercel.com](https://vercel.com) (GitHub login again simplest).
+2. **Add New → Project** → import this same repo → authorize Vercel's
+   GitHub App if prompted.
+3. In the import screen, set **Root Directory** to `frontend`. Vercel
+   auto-detects the Vite framework preset -- no build command changes needed.
+4. Add an environment variable: `VITE_API_BASE` = the Railway URL from step
+   1 (no trailing slash), e.g. `https://your-service.up.railway.app`.
+5. Deploy. Vercel gives you a production URL (e.g.
+   `https://calc-tutor.vercel.app`).
+
+### 3. Point the backend back at the frontend
+
+1. Back in Railway, update `FRONTEND_ORIGIN` to your real Vercel URL from
+   step 2. If you also want Vercel *preview* deployments (unique URLs per
+   branch/PR) to work, add them comma-separated -- `FRONTEND_ORIGIN` accepts
+   a comma-separated list.
+2. Redeploy the backend (Railway usually redeploys automatically on a
+   variable change; trigger one manually if not).
+
+### 4. Verify end to end
+
+Open the Vercel URL in a browser and try all three modes. If the browser
+console shows a CORS error, it almost always means `FRONTEND_ORIGIN` on
+Railway doesn't exactly match the Vercel URL (scheme, no trailing slash) or
+the backend hasn't redeployed since you changed it.
+
+**Before you share the URL**: it's now a public page that calls a paid
+Claude API on your key. The rate limits from `CLAUDE_CALLS_PER_MINUTE` /
+`SESSION_CREATES_PER_MINUTE_PER_IP` cap abuse but don't eliminate cost --
+keep the URL private until you're ready for that, and keep an eye on your
+Anthropic Console usage.
+
 ## What's simplified for the MVP
 
 - **No accounts** — the knowledge profile and practice state live in memory per

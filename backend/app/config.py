@@ -6,7 +6,16 @@ load_dotenv()
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-5")
-FRONTEND_ORIGIN = os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")
+
+# Comma-separated list of origins allowed to call this API, e.g.
+# "https://calc-tutor.vercel.app,https://calc-tutor-git-preview.vercel.app"
+# -- a list (not just one) because Vercel gives each preview deployment its
+# own URL in addition to the production domain.
+FRONTEND_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173").split(",")
+    if origin.strip()
+]
 
 # How long a session may sit untouched before it's evicted from memory.
 SESSION_TTL_SECONDS = int(os.environ.get("SESSION_TTL_SECONDS", str(2 * 60 * 60)))
