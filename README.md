@@ -45,6 +45,23 @@ Then open the printed local URL (default `http://localhost:5173`). The frontend
 expects the backend at `http://localhost:8000` by default; override with a
 `VITE_API_BASE` env var if needed.
 
+## Testing
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
+
+The suite covers `math_engine` (expression parsing, derivative checking,
+answer-equivalence, and — importantly — that the parser can't be used to
+execute arbitrary code), the derivatives problem bank and its adaptive
+`pick_problem` selection, and the in-memory session store. None of it needs
+`ANTHROPIC_API_KEY` — the Claude-calling paths (lesson intros, chat, practice
+feedback, image transcription) aren't covered here and need manual testing
+against a real key.
+
 ## What's simplified for the MVP
 
 - **One topic** (derivatives). The lesson content, problem bank, and skill list live

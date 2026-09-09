@@ -13,9 +13,19 @@ _TRANSFORMATIONS = standard_transformations + (
     convert_xor,
 )
 
-# local_dict pins the bare names we expect; parse_expr's default global_dict
-# (left as None below) is sympy's own safe namespace, not the real builtins,
-# so its internal eval can't reach anything outside sympy.
+# parse_expr ultimately evals the (transformed) input. Passing global_dict=None
+# makes sympy build its own namespace via `exec("from sympy import *", d)` --
+# but exec() always re-attaches the real `__builtins__` to that dict, so
+# `__import__(...)`, `open(...)`, etc. would still resolve and actually run.
+# Building that same sympy namespace ourselves and then stripping __builtins__
+# keeps Integer/Symbol/etc. available (auto-number and other transformations
+# depend on them) while removing arbitrary code execution.
+_SYMPY_GLOBALS: dict = {}
+exec("from sympy import *", _SYMPY_GLOBALS)  # noqa: S102 -- populates a fixed, then-neutered namespace
+_SYMPY_GLOBALS["__builtins__"] = {}
+
+# local_dict pins the bare names we expect; auto_symbol falls back to this for
+# any bare NAME token that isn't already in _SYMPY_GLOBALS.
 _ALLOWED_NAMES = {
     "x": X,
     "sin": sympy.sin,
@@ -41,11 +51,17 @@ def parse_expression(text: str) -> sympy.Expr:
         expr = parse_expr(
             text.strip(),
             local_dict=_ALLOWED_NAMES,
+            global_dict=_SYMPY_GLOBALS,
             transformations=_TRANSFORMATIONS,
             evaluate=True,
         )
     except Exception as exc:
         raise MathParseError(f"Could not parse '{text}' as a math expression.") from exc
+
+    if not isinstance(expr, sympy.Basic):
+        # A handful of degenerate inputs (e.g. bare literals/collections) eval
+        # to a plain Python object instead of a sympy type.
+        raise MathParseError(f"'{text}' is not a valid math expression.")
 
     extra_symbols = expr.free_symbols - {X}
     if extra_symbols:
