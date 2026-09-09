@@ -1,4 +1,6 @@
+import threading
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 
 from fastapi import HTTPException
@@ -24,6 +26,35 @@ class SessionState:
 
 
 _sessions: dict[str, SessionState] = {}
+
+# FastAPI runs each sync route handler in a thread pool, so two requests
+# against the SAME session_id (a double-click before the UI disables the
+# button, a slow Claude call overlapping a fast follow-up request, etc.) can
+# genuinely run concurrently. A per-session lock serializes all work against
+# one session's mutable state without blocking unrelated sessions. It is NOT
+# reentrant -- nothing that runs while holding it should try to acquire it
+# again for the same session_id.
+_session_locks: dict[str, threading.Lock] = {}
+_locks_guard = threading.Lock()
+
+
+def _get_lock(session_id: str) -> threading.Lock:
+    with _locks_guard:
+        lock = _session_locks.get(session_id)
+        if lock is None:
+            lock = threading.Lock()
+            _session_locks[session_id] = lock
+        return lock
+
+
+@contextmanager
+def session_lock(session_id: str):
+    """Serialize all reads/writes against one session's state. Route
+    handlers should wrap their entire body (after validating the session
+    exists) in `with session_lock(session_id):` if they mutate session
+    state or read it in a way that assumes it won't change mid-request."""
+    with _get_lock(session_id):
+        yield
 
 
 def create_session() -> str:

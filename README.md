@@ -91,6 +91,10 @@ verified against a live key.
 - **Limits are curated to have a clean answer** — the problem bank avoids
   two-sided limits that don't exist (e.g. `1/x` at `x=0`), which the current
   answer checker doesn't have a way to express.
-- **No session expiry, rate limiting, or concurrency locking** on the in-memory
-  store — fine for single-user local/dev use, worth hardening before any real
-  multi-user or public deployment.
+- **No session expiry or rate limiting** on the in-memory store — sessions
+  (and their per-session locks) accumulate for the life of the process, and
+  nothing caps how often one session can call the Claude API. Concurrency
+  itself is handled: a per-session lock (`session_store.session_lock`) wraps
+  every chat/practice route so concurrent requests against the *same* session
+  can't race (see `tests/test_practice_concurrency.py` for the scenario this
+  closes); requests against different sessions still run fully in parallel.
